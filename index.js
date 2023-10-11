@@ -10,10 +10,6 @@ await fastify.register(cors, {
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'],
 });
 
-fastify.get('/', async function handler(request, reply) {
-  return { hello: 'world' };
-});
-
 fastify.get('/lux', async function handler(request, reply) {
   const randomInt = Math.floor(Math.random() * (88000 - 0 + 1)) + 0;
   return { lux: randomInt };
