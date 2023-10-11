@@ -40,6 +40,26 @@ curl http://localhost:3000/lux
 }
 ```
 
+## API Endpoints
+* `GET /lux`: Returns the current lux value from the light sensor
+```json
+{
+  "lux": 44000
+}
+```
+* `GET /lux/max`: Returns the maximum lux value possible.
+```json
+{
+  "lux": 88000
+}
+```
+* `GET /lux/min`: Returns the minimum lux value possible.
+```json
+{
+  "lux": 0
+}
+```
+
 ## Hardware Setup
 
 ![Sensor Wiring](./images/TSL25911-73.jpg)
