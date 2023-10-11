@@ -15,6 +15,14 @@ fastify.get('/lux', async function handler(request, reply) {
   return { lux: randomInt };
 });
 
+fastify.get('/lux/max', async function handler(request, reply) {
+  return { lux: 88000 };
+});
+
+fastify.get('/lux/min', async function handler(request, reply) {
+  return { lux: 0 };
+});
+
 try {
   await fastify.listen({ port: 3000 });
 } catch (err) {
