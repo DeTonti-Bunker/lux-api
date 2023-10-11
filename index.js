@@ -7,7 +7,7 @@ const fastify = Fastify({
 });
 
 await fastify.register(cors, {
-  origin: ['http://localhost:8080', 'http://petemaison.duckdns.org'],
+  origin: ['http://localhost:8080', 'https://detontibunker.duckdns.org'],
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'],
 });
 
