@@ -68,7 +68,7 @@ curl http://localhost:3000/lux
 
 ## Hardware Setup
 
-![Sensor Wiring](./images/TSL25911-73.jpg)
+![Sensor Wiring](./images/TSL25911-73.png)
 
 Refer to the instructions:
 
