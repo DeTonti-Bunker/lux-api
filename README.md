@@ -70,6 +70,6 @@ curl http://localhost:3000/lux
 
 ![Sensor Wiring](./images/TSL25911-73.png)
 
-Refer to the instructions:
+Refer to the instructions (but make sure to connect the VCC to the 3.3V PIN):
 
 - Light sensor module [cqrobot wiki TSL2491X_Light_Sensor](http://www.cqrobot.wiki/index.php/TSL2591X_Light_Sensor)
