@@ -69,6 +69,7 @@ curl http://localhost:3000/lux
 ## Hardware Setup
 
 ![Sensor Wiring](./images/TSL25911-73.png)
+![GPIO Diagram](./images/GPIO-Pinout-Diagram-2.png)
 
 Refer to the instructions (but make sure to connect the VCC to the 3.3V PIN):
 
