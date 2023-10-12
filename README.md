@@ -36,7 +36,7 @@ curl http://localhost:3000/lux
 
 ```json
 {
-  "lux": 44000
+  "lux": 11
 }
 ```
 
@@ -46,7 +46,7 @@ curl http://localhost:3000/lux
 
 ```json
 {
-  "lux": 44000
+  "lux": 11
 }
 ```
 
@@ -54,7 +54,7 @@ curl http://localhost:3000/lux
 
 ```json
 {
-  "lux": 88000
+  "lux": 188
 }
 ```
 
