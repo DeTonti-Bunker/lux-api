@@ -18,7 +18,24 @@ fastify.get('/status', { websocket: true }, (connection, req) => {
   connection.socket.on('message', (message) => {
     console.log('Received message: ', message);
 
-    const execPromise = execLuxReader();
+    const execPromise = execLuxReader('lux_reader.py');
+
+    execPromise.then((result) => {
+      connection.socket.send(`${result.lux}`);
+    });
+  });
+
+  connection.socket.on('close', () => {
+    console.log('WebSocket closed');
+  });
+});
+
+//for testing outside of a raspberry pi
+fastify.get('/status/test', { websocket: true }, (connection, req) => {
+  connection.socket.on('message', (message) => {
+    console.log('Received message: ', message);
+
+    const execPromise = execLuxReader('lux_reader_test.py');
 
     execPromise.then((result) => {
       connection.socket.send(`${result.lux}`);
@@ -31,11 +48,18 @@ fastify.get('/status', { websocket: true }, (connection, req) => {
 });
 
 fastify.get('/api/lux', async function handler(request, reply) {
-  const execPromise = execLuxReader();
+  const execPromise = execLuxReader('lux_reader.py');
 
-  execPromise.catch((error) => {
-    interpretLuxError(error);
-  });
+  handleExecErrors(promise);
+
+  return execPromise;
+});
+
+//for testing outside of a raspberry pi.
+fastify.get('/api/lux/test', async function handler(request, reply) {
+  const execPromise = execLuxReader('lux_reader_test.py');
+
+  handleExecErrors(execPromise);
 
   return execPromise;
 });
@@ -55,19 +79,33 @@ try {
   process.exit(1);
 }
 
-function execLuxReader() {
+function handleExecErrors(promise) {
+  promise.catch((error) => {
+    interpretLuxError(error);
+  });
+}
+
+function interpretLuxError(error) {
+  if (error === 'pythonScript') {
+    reply.status(500).send({ error: 'Failed to execute light reader script' });
+  } else if (error === 'luxLine') {
+    reply.status(500).send({ error: 'Failed to retrieve Lux value' });
+  } else {
+    reply.status(500).send({ error: 'Unknown error' });
+  }
+}
+
+function execLuxReader(scriptFileName) {
   const execPromise = new Promise((resolve, reject) => {
-    exec('python3 ./scripts/lux_reader.py', (error, stdout, stderr) => {
+    exec(`python3 ./scripts/${scriptFileName}`, (error, stdout, stderr) => {
       if (error) {
         reject('pythonScript');
         return;
       }
-      console.log(stdout);
 
       const luxLine = stdout
         .split('\n')
         .find((line) => line.startsWith('Lux:'));
-      console.log(luxLine, 'luxLine');
 
       if (!luxLine) {
         reject('luxLine');
@@ -80,14 +118,4 @@ function execLuxReader() {
   });
 
   return execPromise;
-}
-
-function interpretLuxError(error) {
-  if (error === 'pythonScript') {
-    reply.status(500).send({ error: 'Failed to execute light reader script' });
-  } else if (error === 'luxLine') {
-    reply.status(500).send({ error: 'Failed to retrieve Lux value' });
-  } else {
-    reply.status(500).send({ error: 'Unknown error' });
-  }
 }
