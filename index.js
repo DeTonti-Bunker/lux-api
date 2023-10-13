@@ -2,11 +2,13 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { exec } from 'child_process';
 import Websocket from '@fastify/websocket';
+import staticRoutes from './routes/staticRoutes.mjs';
 
 const fastify = Fastify({
   logger: true,
 });
 
+fastify.register(staticRoutes);
 fastify.register(Websocket);
 
 await fastify.register(cors, {
@@ -72,13 +74,6 @@ fastify.get('/api/lux/min', async function handler(request, reply) {
   return { lux: 0 };
 });
 
-try {
-  await fastify.listen({ port: 3000 });
-} catch (err) {
-  fastify.log.error(err);
-  process.exit(1);
-}
-
 function handleExecErrors(promise) {
   promise.catch((error) => {
     interpretLuxError(error);
@@ -118,4 +113,11 @@ function execLuxReader(scriptFileName) {
   });
 
   return execPromise;
+}
+
+try {
+  await fastify.listen({ port: 3000 });
+} catch (err) {
+  fastify.log.error(err);
+  process.exit(1);
 }
