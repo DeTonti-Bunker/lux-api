@@ -2,7 +2,6 @@ const lightbulb = document.querySelector('.lightbulb');
 const http = 'http';
 const ws = 'ws';
 const rootUrl = 'localhost:3000';
-const testUrl = '/test';
 
 function setBrightness(value) {
   console.log('setting brightness', value);
@@ -23,7 +22,7 @@ setBrightness(0);
 
 var xhr = new XMLHttpRequest();
 
-xhr.open('GET', `${http}://${rootUrl}/api/lux${testUrl}`, true);
+xhr.open('GET', `${http}://${rootUrl}/api/lux`, true);
 
 xhr.onreadystatechange = function () {
   if (xhr.readyState === 4 && xhr.status === 200) {
@@ -45,7 +44,7 @@ xhr.onerror = function () {
 //send the request
 xhr.send();
 
-const socket = new WebSocket(`${ws}://${rootUrl}/status${testUrl}`);
+const socket = new WebSocket(`${ws}://${rootUrl}/status`);
 
 socket.onopen = () => {
   console.log('Connected to the server');

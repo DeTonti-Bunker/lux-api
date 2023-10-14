@@ -8,6 +8,7 @@ async function staticRoutes(fastify, options) {
 
     try {
       const execPromise = execLuxReaderTest();
+
       execPromise.then((result) => {
         let replacement = 'off.png';
         if (result.lux > 10) {
@@ -17,12 +18,11 @@ async function staticRoutes(fastify, options) {
         let data = fs.readFileSync(filePath, 'utf8');
         data = data.replace('{{OG_IMAGE}}', `/images/${replacement}`);
 
-        reply.header('Content-Type', 'text/html').send(data);
+        return reply.header('Content-Type', 'text/html').send(data);
       });
 
-      return execPromise;
+      return reply;
     } catch (error) {
-      console.log(error);
       reply.code(500).send('Internal server error');
     }
   });
@@ -34,7 +34,6 @@ async function staticRoutes(fastify, options) {
       const data = fs.readFileSync(filePath, 'utf8');
       reply.header('Content-Type', 'application/javascript').send(data);
     } catch (error) {
-      console.log(error);
       reply.code(500).send('Internal server error');
     }
   });
@@ -46,7 +45,6 @@ async function staticRoutes(fastify, options) {
       const data = fs.readFileSync(filePath, 'utf8');
       reply.header('Content-Type', 'text/css').send(data);
     } catch (error) {
-      console.log(error);
       reply.code(500).send('Internal server error');
     }
   });
