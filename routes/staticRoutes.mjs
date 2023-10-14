@@ -1,14 +1,26 @@
 import fs from 'fs';
 import path from 'path';
+import { execLuxReaderTest } from '../utils/luxReader.mjs';
 
 async function staticRoutes(fastify, options) {
   fastify.get('/', async (request, reply) => {
     const filePath = path.join(process.cwd(), 'static', 'index.html');
 
     try {
-      let data = await fs.readFileSync(filePath, 'utf8');
-      data = data.replace('{{OG_IMAGE}}', 'HELLO');
-      reply.header('Content-Type', 'text/html').send(data);
+      const execPromise = execLuxReaderTest();
+      execPromise.then((result) => {
+        let replacement = 'off.png';
+        if (result.lux > 10) {
+          replacement = 'on.png';
+        }
+
+        let data = fs.readFileSync(filePath, 'utf8');
+        data = data.replace('{{OG_IMAGE}}', `/images/${replacement}`);
+
+        reply.header('Content-Type', 'text/html').send(data);
+      });
+
+      return execPromise;
     } catch (error) {
       console.log(error);
       reply.code(500).send('Internal server error');
@@ -19,7 +31,7 @@ async function staticRoutes(fastify, options) {
     const filePath = path.join(process.cwd(), 'static', 'script.js');
 
     try {
-      const data = await fs.readFileSync(filePath, 'utf8');
+      const data = fs.readFileSync(filePath, 'utf8');
       reply.header('Content-Type', 'application/javascript').send(data);
     } catch (error) {
       console.log(error);
@@ -31,7 +43,7 @@ async function staticRoutes(fastify, options) {
     const filePath = path.join(process.cwd(), 'static', 'styles.css');
 
     try {
-      const data = await fs.readFileSync(filePath, 'utf8');
+      const data = fs.readFileSync(filePath, 'utf8');
       reply.header('Content-Type', 'text/css').send(data);
     } catch (error) {
       console.log(error);

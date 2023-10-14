@@ -1,14 +1,17 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { exec } from 'child_process';
 import Websocket from '@fastify/websocket';
 import staticRoutes from './routes/staticRoutes.mjs';
+import imageRoutes from './routes/imageRoutes.mjs';
+import execLuxReader from './utils/luxReader.mjs';
+import { execLuxReaderTest } from './utils/luxReader.mjs';
 
 const fastify = Fastify({
   logger: true,
 });
 
 fastify.register(staticRoutes);
+fastify.register(imageRoutes);
 fastify.register(Websocket);
 
 await fastify.register(cors, {
@@ -20,7 +23,7 @@ fastify.get('/status', { websocket: true }, (connection, req) => {
   connection.socket.on('message', (message) => {
     console.log('Received message: ', message);
 
-    const execPromise = execLuxReader('lux_reader.py');
+    const execPromise = execLuxReader();
 
     execPromise.then((result) => {
       connection.socket.send(`${result.lux}`);
@@ -37,7 +40,7 @@ fastify.get('/status/test', { websocket: true }, (connection, req) => {
   connection.socket.on('message', (message) => {
     console.log('Received message: ', message);
 
-    const execPromise = execLuxReader('lux_reader_test.py');
+    const execPromise = execLuxReaderTest();
 
     execPromise.then((result) => {
       connection.socket.send(`${result.lux}`);
@@ -52,16 +55,36 @@ fastify.get('/status/test', { websocket: true }, (connection, req) => {
 fastify.get('/api/lux', async function handler(request, reply) {
   const execPromise = execLuxReader('lux_reader.py');
 
-  handleExecErrors(promise);
+  execPromise.catch((error) => {
+    if (error === 'pythonScript') {
+      reply
+        .status(500)
+        .send({ error: 'Failed to execute light reader script' });
+    } else if (error === 'luxLine') {
+      reply.status(500).send({ error: 'Failed to retrieve Lux value' });
+    } else {
+      reply.status(500).send({ error: 'Unknown error' });
+    }
+  });
 
   return execPromise;
 });
 
 //for testing outside of a raspberry pi.
 fastify.get('/api/lux/test', async function handler(request, reply) {
-  const execPromise = execLuxReader('lux_reader_test.py');
+  const execPromise = execLuxReaderTest();
 
-  handleExecErrors(execPromise);
+  execPromise.catch((error) => {
+    if (error === 'pythonScript') {
+      reply
+        .status(500)
+        .send({ error: 'Failed to execute light reader script' });
+    } else if (error === 'luxLine') {
+      reply.status(500).send({ error: 'Failed to retrieve Lux value' });
+    } else {
+      reply.status(500).send({ error: 'Unknown error' });
+    }
+  });
 
   return execPromise;
 });
@@ -73,47 +96,6 @@ fastify.get('/api/lux/max', async function handler(request, reply) {
 fastify.get('/api/lux/min', async function handler(request, reply) {
   return { lux: 0 };
 });
-
-function handleExecErrors(promise) {
-  promise.catch((error) => {
-    interpretLuxError(error);
-  });
-}
-
-function interpretLuxError(error) {
-  if (error === 'pythonScript') {
-    reply.status(500).send({ error: 'Failed to execute light reader script' });
-  } else if (error === 'luxLine') {
-    reply.status(500).send({ error: 'Failed to retrieve Lux value' });
-  } else {
-    reply.status(500).send({ error: 'Unknown error' });
-  }
-}
-
-function execLuxReader(scriptFileName) {
-  const execPromise = new Promise((resolve, reject) => {
-    exec(`python3 ./scripts/${scriptFileName}`, (error, stdout, stderr) => {
-      if (error) {
-        reject('pythonScript');
-        return;
-      }
-
-      const luxLine = stdout
-        .split('\n')
-        .find((line) => line.startsWith('Lux:'));
-
-      if (!luxLine) {
-        reject('luxLine');
-        return;
-      }
-
-      const luxValue = luxLine.split(':')[1].trim();
-      resolve({ lux: luxValue });
-    });
-  });
-
-  return execPromise;
-}
 
 try {
   await fastify.listen({ port: 3000 });
