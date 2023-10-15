@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { execLuxReaderTest } from '../utils/luxReader.mjs';
+import execLuxReader from '../utils/luxReader.mjs';
 
 async function staticRoutes(fastify, options) {
   fastify.get('/', async (request, reply) => {
     const filePath = path.join(process.cwd(), 'static', 'index.html');
 
     try {
-      const execPromise = execLuxReaderTest();
+      const execPromise = execLuxReader();
 
       execPromise.then((result) => {
         let replacement = 'off.png';

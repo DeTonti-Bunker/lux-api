@@ -1,7 +1,7 @@
 const lightbulb = document.querySelector('.lightbulb');
-const http = 'http';
-const ws = 'ws';
-const rootUrl = 'localhost:3000';
+const http = 'https';
+const ws = 'wss';
+const rootUrl = 'detontibunker.duckdns.org';
 
 function setBrightness(value) {
   console.log('setting brightness', value);
@@ -52,7 +52,7 @@ socket.onopen = () => {
   setInterval(() => {
     console.log('sending');
     socket.send('get_lux');
-  }, 5000);
+  }, 2000);
 };
 
 socket.onmessage = (event) => {
