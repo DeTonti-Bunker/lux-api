@@ -1,7 +1,7 @@
 const lightbulb = document.querySelector('.lightbulb');
-const http = 'https';
-const ws = 'wss';
-const rootUrl = 'detontibunker.duckdns.org';
+const http = '{{HTTP}}';
+const ws = '{{WSS}}';
+const rootUrl = '{{ROOT_URL}}';
 
 function setBrightness(value) {
   console.log('setting brightness', value);

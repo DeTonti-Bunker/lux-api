@@ -7,6 +7,7 @@ import luxTestRoutes from './routes/luxTestRoutes.mjs';
 
 import staticRoutes from './routes/staticRoutes.mjs';
 import imageRoutes from './routes/imageRoutes.mjs';
+import emojiRoutes from './routes/emojiRoutes.mjs';
 
 const fastify = Fastify({
   logger: true,
@@ -22,9 +23,10 @@ if (process.env.LUX_API_MODE) {
 
 fastify.register(staticRoutes);
 fastify.register(imageRoutes);
+fastify.register(emojiRoutes);
 
 await fastify.register(cors, {
-  origin: ['http://localhost:8080', 'https://detontibunker.duckdns.org'],
+  origin: ['http://localhost:3000', 'https://detontibunker.duckdns.org'],
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'],
 });
 

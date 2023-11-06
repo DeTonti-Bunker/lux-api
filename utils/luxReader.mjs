@@ -4,7 +4,7 @@ function execLuxReaderScript(scriptFileName) {
   const execPromise = new Promise((resolve, reject) => {
     exec(`python3 ./scripts/${scriptFileName}`, (error, stdout, stderr) => {
       if (error) {
-        reject('pythonScript');
+        reject(`error running python script: ${error}`);
         return;
       }
 
@@ -13,7 +13,7 @@ function execLuxReaderScript(scriptFileName) {
         .find((line) => line.startsWith('Lux:'));
 
       if (!luxLine) {
-        reject('luxLine');
+        reject('unable to parse lux line');
         return;
       }
 
