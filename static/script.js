@@ -18,6 +18,10 @@ function transformLuxToBrightness(lux) {
   }
 }
 
+function setEmoji(emojiCode) {
+  lightbulb.innerHTML = `&#${emojiCode};`;
+}
+
 setBrightness(0);
 
 var xhr = new XMLHttpRequest();
@@ -62,4 +66,15 @@ socket.onmessage = (event) => {
 
 socket.onclose = () => {
   console.log('Connection closed');
+};
+
+const emojiSocket = new WebSocket(`${ws}://${rootUrl}/api/emoji/status`);
+
+emojiSocket.onmessage = (event) => {
+  console.log(`Received: `, event.data);
+  setEmoji(event.data);
+};
+
+emojiSocket.onclose = () => {
+  console.log('Emoji connection closed');
 };

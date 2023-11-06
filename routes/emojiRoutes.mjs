@@ -15,18 +15,7 @@ async function emojiRoutes(fastify, options) {
   );
 
   fastify.get('/api/emoji', async (request, reply) => {
-    const dbPromise = new Promise((resolve, reject) => {
-      db.get(`SELECT code FROM emoji ORDER BY id DESC limit 1`, (err, row) => {
-        if (err) {
-          reject();
-          return console.error(err.message);
-        }
-        console.log(row, 'row');
-        resolve({ emojiCode: row.code });
-      });
-    });
-
-    return dbPromise;
+    return getEmojiCode();
   });
 
   fastify.post('/api/emoji', async (request, reply) => {
@@ -56,6 +45,7 @@ async function emojiRoutes(fastify, options) {
               }
 
               console.log(`Row upserted with ID: ${this.lastID}`);
+              broadcastEmoji(emojiCode);
               resolve({ emojiCode: emojiCode, id: this.lastID });
             }
           );
@@ -65,6 +55,47 @@ async function emojiRoutes(fastify, options) {
 
     return dbPromise;
   });
+
+  const clients = new Map();
+  fastify.get(
+    '/api/emoji/status',
+    { websocket: true },
+    async (connection, req) => {
+      const emojiCode = await getEmojiCode();
+      console.log(emojiCode, 'emojiCode');
+      connection.socket.send(`${emojiCode.emojiCode}`);
+
+      const clientId = Math.random().toString(36).substring(2);
+      clients.set(clientId, connection);
+
+      connection.socket.on('close', () => {
+        clients.delete(clientId);
+      });
+    }
+  );
+
+  function broadcastEmoji(emojiCode) {
+    for (const [clientId, client] of clients) {
+      if (client.socket.readyState === 1) {
+        client.socket.send(`${emojiCode}`);
+      }
+    }
+  }
+
+  async function getEmojiCode() {
+    const dbPromise = new Promise((resolve, reject) => {
+      db.get(`SELECT code FROM emoji ORDER BY id DESC limit 1`, (err, row) => {
+        if (err) {
+          reject();
+          return console.error(err.message);
+        }
+        console.log(row, 'row');
+        resolve({ emojiCode: row.code });
+      });
+    });
+
+    return dbPromise;
+  }
 }
 
 export default emojiRoutes;
