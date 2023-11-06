@@ -1,7 +1,7 @@
 const lightbulb = document.querySelector('.lightbulb');
-const http = 'https';
-const ws = 'wss';
-const rootUrl = 'detontibunker.duckdns.org';
+const http = '{{HTTP}}';
+const ws = '{{WSS}}';
+const rootUrl = '{{ROOT_URL}}';
 
 function setBrightness(value) {
   console.log('setting brightness', value);
@@ -16,6 +16,10 @@ function transformLuxToBrightness(lux) {
   } else {
     setBrightness(0);
   }
+}
+
+function setEmoji(emojiCode) {
+  lightbulb.innerHTML = `&#${emojiCode};`;
 }
 
 setBrightness(0);
@@ -62,4 +66,15 @@ socket.onmessage = (event) => {
 
 socket.onclose = () => {
   console.log('Connection closed');
+};
+
+const emojiSocket = new WebSocket(`${ws}://${rootUrl}/api/emoji/status`);
+
+emojiSocket.onmessage = (event) => {
+  console.log(`Received: `, event.data);
+  setEmoji(event.data);
+};
+
+emojiSocket.onclose = () => {
+  console.log('Emoji connection closed');
 };

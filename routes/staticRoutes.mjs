@@ -1,13 +1,19 @@
 import fs from 'fs';
 import path from 'path';
-import execLuxReader from '../utils/luxReader.mjs';
+import execLuxReader, { execLuxReaderTest } from '../utils/luxReader.mjs';
 
 async function staticRoutes(fastify, options) {
   fastify.get('/', async (request, reply) => {
     const filePath = path.join(process.cwd(), 'static', 'index.html');
 
     try {
-      const execPromise = execLuxReader();
+      let execPromise;
+
+      if (process.env.LUX_API_MODE) {
+        execPromise = execLuxReaderTest();
+      } else {
+        execPromise = execLuxReader();
+      }
 
       execPromise.then((result) => {
         let replacement = 'off.png';
@@ -21,7 +27,7 @@ async function staticRoutes(fastify, options) {
         return reply.header('Content-Type', 'text/html').send(data);
       });
 
-      return reply;
+      return execPromise;
     } catch (error) {
       reply.code(500).send('Internal server error');
     }
@@ -31,9 +37,23 @@ async function staticRoutes(fastify, options) {
     const filePath = path.join(process.cwd(), 'static', 'script.js');
 
     try {
-      const data = fs.readFileSync(filePath, 'utf8');
+      let data = fs.readFileSync(filePath, 'utf8');
+
+      if (process.env.LUX_API_MODE) {
+        data = data
+          .replace('{{HTTP}}', 'http')
+          .replace('{{WSS}}', 'ws')
+          .replace('{{ROOT_URL}}', 'localhost:3000');
+      } else {
+        data = data
+          .replace('{{HTTP}}', 'https')
+          .replace('{{WSS}}', 'wss')
+          .replace('{{ROOT_URL}}', 'detontibunker.duckdns.org');
+      }
+
       reply.header('Content-Type', 'application/javascript').send(data);
     } catch (error) {
+      console.log(error);
       reply.code(500).send('Internal server error');
     }
   });
