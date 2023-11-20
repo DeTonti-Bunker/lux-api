@@ -1,19 +1,25 @@
 import fs from 'fs';
 import path from 'path';
-import execLuxReader, { execLuxReaderTest } from '../utils/luxReader.mjs';
+import sqlite3Module from 'sqlite3';
+const sqlite3 = sqlite3Module.verbose();
+import { getCurrentLuxValue } from '../util/lux-db.mjs';
 
 async function staticRoutes(fastify, options) {
+  let db = new sqlite3.Database(
+    path.join(process.cwd(), 'db/lux.db'),
+    (err) => {
+      if (err) {
+        return console.error(err.message);
+      }
+      console.log('Connected to the SQlite database.');
+    }
+  );
+
   fastify.get('/', async (request, reply) => {
     const filePath = path.join(process.cwd(), 'static', 'index.html');
 
     try {
-      let execPromise;
-
-      if (process.env.LUX_API_MODE) {
-        execPromise = execLuxReaderTest();
-      } else {
-        execPromise = execLuxReader();
-      }
+      const execPromise = getCurrentLuxValue(db);
 
       execPromise.then((result) => {
         let replacement = 'off.png';
@@ -29,6 +35,7 @@ async function staticRoutes(fastify, options) {
 
       return execPromise;
     } catch (error) {
+      console.log(error);
       reply.code(500).send('Internal server error');
     }
   });

@@ -1,7 +1,11 @@
-import execLuxReader from '../utils/luxReader.mjs';
 import sqlite3Module from 'sqlite3';
 const sqlite3 = sqlite3Module.verbose();
 import path from 'path';
+import {
+  getCurrentLuxValue,
+  getTimestamp,
+  isThresholdExceeded,
+} from '../util/lux-db.mjs';
 
 async function luxRoutes(fastify, options) {
   let db = new sqlite3.Database(
@@ -16,10 +20,11 @@ async function luxRoutes(fastify, options) {
 
   fastify.get('/status', { websocket: true }, (connection, req) => {
     connection.socket.on('message', (message) => {
-      const execPromise = execLuxReader();
+      const execPromise = getCurrentLuxValue(db);
 
       execPromise.then((result) => {
-        connection.socket.send(`${result.lux}`);
+        console.log('result sending!!', result);
+        connection.socket.send(`${result.luxValue}`);
       });
     });
   });
@@ -41,7 +46,7 @@ async function luxRoutes(fastify, options) {
           }
           console.log('Lux table created or already exists.');
 
-          if (await isThresholdExceeded(luxValue)) {
+          if (await isThresholdExceeded(db, luxValue)) {
             db.run(
               `INSERT INTO lux (current_value, date) VALUES (?, ?)`,
               [luxValue, getTimestamp()],
@@ -56,7 +61,7 @@ async function luxRoutes(fastify, options) {
               }
             );
           } else {
-            resolve({ luxValue: (await getCurrentLuxValue())?.luxValue });
+            resolve({ luxValue: (await getCurrentLuxValue(db))?.luxValue });
           }
         }
       );
@@ -66,20 +71,7 @@ async function luxRoutes(fastify, options) {
   });
 
   fastify.get('/api/lux', async function handler(request, reply) {
-    const execPromise = execLuxReader('lux_reader.py');
-
-    execPromise.catch((error) => {
-      if (error === 'pythonScript') {
-        reply
-          .status(500)
-          .send({ error: 'Failed to execute light reader script' });
-      } else if (error === 'luxLine') {
-        reply.status(500).send({ error: 'Failed to retrieve Lux value' });
-      } else {
-        reply.status(500).send({ error: 'Unknown error' });
-      }
-    });
-
+    const execPromise = getCurrentLuxValue(db);
     return execPromise;
   });
 
@@ -90,43 +82,6 @@ async function luxRoutes(fastify, options) {
   fastify.get('/api/lux/min', async function handler(request, reply) {
     return { lux: 0 };
   });
-
-  async function getCurrentLuxValue() {
-    const luxValuePromise = new Promise((resolve, reject) => {
-      db.get(
-        `SELECT current_value FROM lux ORDER BY id DESC limit 1`,
-        (err, row) => {
-          if (err) {
-            reject();
-            return console.error(err.message);
-          }
-
-          console.log(row, 'lux value row');
-          resolve({ luxValue: row?.current_value });
-        }
-      );
-    });
-
-    return luxValuePromise;
-  }
-
-  async function isThresholdExceeded(newLux) {
-    const currentLux = (await getCurrentLuxValue())?.luxValue;
-    console.log(currentLux, 'currentLux');
-    if (currentLux === undefined) return true;
-
-    return (currentLux < 10 && newLux > 10) || (currentLux > 10 && newLux < 10);
-  }
-
-  function getTimestamp() {
-    const now = new Date();
-    const dateTimeString = now.toISOString();
-    const sqliteDateTimeString = dateTimeString
-      .replace('T', ' ')
-      .replace('Z', '');
-
-    return sqliteDateTimeString;
-  }
 }
 
 export default luxRoutes;
