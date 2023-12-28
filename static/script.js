@@ -31,9 +31,9 @@ xhr.open('GET', `${http}://${rootUrl}/api/lux`, true);
 xhr.onreadystatechange = function () {
   if (xhr.readyState === 4 && xhr.status === 200) {
     var response = JSON.parse(xhr.responseText);
-    console.log(response.lux);
+    console.log(response.luxValue);
 
-    transformLuxToBrightness(response.lux);
+    transformLuxToBrightness(response.luxValue);
 
     document.getElementById('light').style.display = 'block';
   } else if (xhr.readyState === 4) {
@@ -60,7 +60,7 @@ socket.onopen = () => {
 };
 
 socket.onmessage = (event) => {
-  console.log('Received: ', event.data);
+  console.log('Received lux data: ', event.data);
   transformLuxToBrightness(event.data);
 };
 
@@ -71,7 +71,7 @@ socket.onclose = () => {
 const emojiSocket = new WebSocket(`${ws}://${rootUrl}/api/emoji/status`);
 
 emojiSocket.onmessage = (event) => {
-  console.log(`Received: `, event.data);
+  console.log(`Received emoji data: `, event.data);
   setEmoji(event.data);
 };
 

@@ -1,10 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import Websocket from '@fastify/websocket';
-
 import luxRoutes from './routes/luxRoutes.mjs';
-import luxTestRoutes from './routes/luxTestRoutes.mjs';
-
 import staticRoutes from './routes/staticRoutes.mjs';
 import imageRoutes from './routes/imageRoutes.mjs';
 import emojiRoutes from './routes/emojiRoutes.mjs';
@@ -14,13 +11,7 @@ const fastify = Fastify({
 });
 
 fastify.register(Websocket);
-
-if (process.env.LUX_API_MODE) {
-  fastify.register(luxTestRoutes);
-} else {
-  fastify.register(luxRoutes);
-}
-
+fastify.register(luxRoutes);
 fastify.register(staticRoutes);
 fastify.register(imageRoutes);
 fastify.register(emojiRoutes);
