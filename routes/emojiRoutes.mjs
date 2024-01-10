@@ -2,9 +2,10 @@ import sqlite3Module from 'sqlite3';
 const sqlite3 = sqlite3Module.verbose();
 
 import path from 'path';
+import { EmojiService } from '../services/emoji.service.mjs';
 
 async function emojiRoutes(fastify, options) {
-  let db = new sqlite3.Database(
+  const db = new sqlite3.Database(
     path.join(process.cwd(), 'db/lux.db'),
     (err) => {
       if (err) {
@@ -14,46 +15,21 @@ async function emojiRoutes(fastify, options) {
     }
   );
 
+  const emojiService = new EmojiService(db);
+
   fastify.get('/api/emoji', async (request, reply) => {
-    return getEmojiCode();
+    return await emojiService.getActiveEmoji();
   });
 
   fastify.post('/api/emoji', async (request, reply) => {
     const emojiCode = request.body.emojiCode;
-    console.log(emojiCode);
 
-    const dbPromise = new Promise((resolve, reject) => {
-      db.run(
-        `CREATE TABLE IF NOT EXISTS emoji (
-          id INTEGER PRIMARY KEY,
-          code TEXT NOT NULL unique)`,
-        (err) => {
-          if (err) {
-            reject();
-            return console.error(err.message);
-          }
-          console.log('Emoji table created or already exists.');
+    await emojiService.createTableIfNotExists();
+    await emojiService.addEmoji(emojiCode);
 
-          db.run(
-            `INSERT INTO emoji (code) VALUES (?)
-                  ON CONFLICT(code) DO UPDATE set code=excluded.code`,
-            [emojiCode],
-            function (err) {
-              if (err) {
-                reject();
-                return console.error(err);
-              }
+    broadcastEmoji(emojiCode);
 
-              console.log(`Row upserted with ID: ${this.lastID}`);
-              broadcastEmoji(emojiCode);
-              resolve({ emojiCode: emojiCode, id: this.lastID });
-            }
-          );
-        }
-      );
-    });
-
-    return dbPromise;
+    return { emojiCode };
   });
 
   const clients = new Map();
@@ -61,8 +37,7 @@ async function emojiRoutes(fastify, options) {
     '/api/emoji/status',
     { websocket: true },
     async (connection, req) => {
-      const emojiCode = await getEmojiCode();
-      console.log(emojiCode, 'emojiCode');
+      const emojiCode = await emojiService.getActiveEmoji();
       connection.socket.send(`${emojiCode.emojiCode}`);
 
       const clientId = Math.random().toString(36).substring(2);
@@ -80,21 +55,6 @@ async function emojiRoutes(fastify, options) {
         client.socket.send(`${emojiCode}`);
       }
     }
-  }
-
-  async function getEmojiCode() {
-    const dbPromise = new Promise((resolve, reject) => {
-      db.get(`SELECT code FROM emoji ORDER BY id DESC limit 1`, (err, row) => {
-        if (err) {
-          reject();
-          return console.error(err.message);
-        }
-        console.log(row, 'row');
-        resolve({ emojiCode: row.code });
-      });
-    });
-
-    return dbPromise;
   }
 }
 

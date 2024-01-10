@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3Module from 'sqlite3';
+import { LuxService } from '../services/lux.service.mjs';
 const sqlite3 = sqlite3Module.verbose();
-import { getCurrentLuxValue } from '../util/lux-db.mjs';
 
 async function staticRoutes(fastify, options) {
   let db = new sqlite3.Database(
@@ -15,25 +15,23 @@ async function staticRoutes(fastify, options) {
     }
   );
 
+  const luxService = new LuxService(db);
+
   fastify.get('/', async (request, reply) => {
     const filePath = path.join(process.cwd(), 'static', 'index.html');
 
     try {
-      const execPromise = getCurrentLuxValue(db);
+      const { luxValue } = await luxService.getCurrentLuxValue(db);
 
-      execPromise.then((result) => {
-        let replacement = 'off.png';
-        if (result.lux > 10) {
-          replacement = 'on.png';
-        }
+      let replacement = 'off.png';
+      if (luxValue > 10) {
+        replacement = 'on.png';
+      }
 
-        let data = fs.readFileSync(filePath, 'utf8');
-        data = data.replace('{{OG_IMAGE}}', `/images/${replacement}`);
+      let data = fs.readFileSync(filePath, 'utf8');
+      data = data.replace('{{OG_IMAGE}}', `/images/${replacement}`);
 
-        return reply.header('Content-Type', 'text/html').send(data);
-      });
-
-      return execPromise;
+      return reply.header('Content-Type', 'text/html').send(data);
     } catch (error) {
       console.log(error);
       reply.code(500).send('Internal server error');
